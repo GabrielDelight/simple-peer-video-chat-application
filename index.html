@@ -1,0 +1,60 @@
+
+<html>
+    <body>
+      <style>
+        #outgoing {
+          width: 600px;
+          word-wrap: break-word;
+          white-space: normal;
+        }
+      </style>
+      <form>
+        <textarea id="incoming"></textarea>
+        <button type="submit">submit</button>
+      </form>
+      <pre id="outgoing"></pre>
+      <video src="" id="video"></video>
+      <script src="/simple-peer/simplepeer.min.js"></script>
+      <script>
+        navigator.mediaDevices
+          .getUserMedia({
+            video: {
+              facingMode: true,
+            },
+            audio: true,
+          })
+          .then((stream) => {
+            const p = new SimplePeer({
+              initiator: location.hash === "#1",
+              trickle: false,
+              stream,
+            });
+            p.on("error", (err) => console.log("error", err));
+            p.on("signal", (data) => {
+              console.log("SIGNAL", JSON.stringify(data));
+              document.querySelector("#outgoing").textContent =
+                JSON.stringify(data);
+            });
+            document.querySelector("form").addEventListener("submit", (ev) => {
+              ev.preventDefault();
+              p.signal(JSON.parse(document.querySelector("#incoming").value));
+            });
+            p.on("connect", () => {
+              console.log("CONNECT");
+              p.send("whatever" + Math.random());
+            });
+            p.on("data", (data) => {
+              console.log("data: " + data);
+            });
+            p.on("stream", function (stream) {
+              let video = document.getElementById("video");
+              video.srcObject = stream;
+              video.play();
+            });
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+      </script>
+    </body>
+  </html>
